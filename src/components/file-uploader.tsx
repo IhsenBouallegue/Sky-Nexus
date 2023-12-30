@@ -18,7 +18,6 @@ export default function FileUploader({
           const jsonArrayString = `[${text.replace(/}\s*{/g, "},{")}]`;
           try {
             const logEntries: LogEntry[] = JSON.parse(jsonArrayString);
-            console.log("Parsed JSON:", logEntries);
             onFileLoad(logEntries);
           } catch (error) {
             console.error("Error parsing JSON:", error);

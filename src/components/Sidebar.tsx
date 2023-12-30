@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
   HomeIcon,
   LineChartIcon,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { buttonVariants } from "./ui/button";
 
 const Sidebar = () => {
   const [activePage, setActivePage] = useState("home");
@@ -25,9 +27,10 @@ const Sidebar = () => {
         <Link
           key={item.name}
           href={item.href}
-          className={`flex items-center p-2 rounded-full hover:bg-gray-700 ${
-            activePage === item.name.toLowerCase() ? "bg-gray-700" : ""
-          }`}
+          className={cn(
+            `${activePage === item.name.toLowerCase() && "bg-accent"}`,
+            buttonVariants({ variant: "ghost", size: "icon" })
+          )}
           onClick={() => setActivePage(item.name.toLowerCase())}
         >
           <item.icon className="h-6 w-6" />

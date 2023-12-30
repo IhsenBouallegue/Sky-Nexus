@@ -63,3 +63,39 @@ export const processData = (
 
   return { sentData, receivedData };
 };
+
+export interface TransmissionChartPoint {
+  date: string;
+  count: number;
+}
+
+export const processDataForBarChart = (
+  logData: LogEntry[],
+  driverName: string
+): TransmissionChartPoint[] => {
+  let cumulativeCount = 0;
+  const dataBySecond: { [key: string]: number } = {};
+
+  // biome-ignore lint/complexity/noForEach: <explanation>
+  logData.forEach((entry) => {
+    if (entry.fields.driver === driverName) {
+      const secondKey = format(
+        parseISO(entry.timestamp),
+        "yyyy-MM-dd HH:mm:ss"
+      );
+
+      if (entry.fields.message.includes("Transmit")) {
+        cumulativeCount = 0;
+      } else if (entry.fields.message.includes("Received")) {
+        cumulativeCount++;
+      }
+
+      dataBySecond[secondKey] = cumulativeCount;
+    }
+  });
+
+  return Object.entries(dataBySecond).map(([key, value]) => ({
+    date: format(parseISO(key), "HH:mm:ss"),
+    count: value,
+  }));
+};

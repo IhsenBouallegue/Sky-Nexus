@@ -12,16 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-type payloadType = {
-  value: string | number;
-  name: string;
-};
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: payloadType[];
-  label?: number;
-}
+import CustomTooltip from "./custom-tooltip";
 
 export default function TimeSeriesChart({
   chartTitle,
@@ -38,37 +29,6 @@ export default function TimeSeriesChart({
     received: receivedData[index] ? receivedData[index].y : null,
   }));
 
-  const CustomContent = ({ active, payload, label }: CustomTooltipProps) => {
-    if (active && payload && payload.length > 0) {
-      return (
-        <div
-          style={{
-            backgroundColor: "#5b63ffe7",
-            padding: "10px",
-            borderRadius: "10px",
-            boxShadow: "1px 2px 10px -2px #7873ffb1",
-          }}
-        >
-          {label}
-          {payload.map((pld: payloadType) => (
-            <p
-              key={pld.name}
-              style={{
-                borderStyle: "solid 1px",
-                fontSize: "13px",
-                fontWeight: "600",
-                fontFamily: "sans-serif",
-                color: "#fff",
-              }}
-            >
-              {`${pld.name} : ${pld.value}`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
   return (
     <div className="flex flex-col w-full">
       <h3 className="text-2xl font-semibold mb-4 ml-6">{chartTitle}</h3>
@@ -78,7 +38,7 @@ export default function TimeSeriesChart({
           <XAxis dataKey="date" />
           <YAxis />
           <Legend />
-          <Tooltip content={<CustomContent />} />
+          <Tooltip content={<CustomTooltip />} />
           <Brush
             dataKey="date"
             startIndex={0}
@@ -86,8 +46,18 @@ export default function TimeSeriesChart({
             fill="transparent"
             stroke="hsl(var(--foreground) / 40%)"
           />
-          <Line type="monotone" dataKey="sent" stroke="#22a6b3" />
-          <Line type="monotone" dataKey="received" stroke="#f0932b" />
+          <Line
+            type="monotone"
+            dataKey="sent"
+            stroke="#22a6b3"
+            name="sent to main"
+          />
+          <Line
+            type="monotone"
+            dataKey="received"
+            stroke="#f0932b"
+            name="received from main"
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

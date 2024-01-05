@@ -1,4 +1,4 @@
-import { TransmissionChartPoint } from "@/lib/logging-utils";
+import { ChartPoint } from "@/lib/logging-utils";
 import React from "react";
 import {
   Bar,
@@ -12,11 +12,11 @@ import {
 } from "recharts";
 import CustomTooltip from "./custom-tooltip";
 
-export default function TransmissionBarChart({
+export default function AnalysisBarChart({
   chartTitle,
   data,
 }: {
-  data: TransmissionChartPoint[];
+  data: ChartPoint[];
   chartTitle: string;
 }) {
   return (
@@ -25,17 +25,17 @@ export default function TransmissionBarChart({
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
+          <XAxis dataKey="x" />
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
           <Brush
-            dataKey="date"
+            dataKey="x"
             startIndex={0}
             height={30}
             fill="transparent"
             stroke="hsl(var(--foreground) / 40%)"
           />
-          <Bar dataKey="count" fill="#8884d8" />
+          <Bar dataKey="y" fill="#8884d8" />
         </BarChart>
       </ResponsiveContainer>
     </div>

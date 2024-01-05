@@ -1,18 +1,19 @@
 "use client";
 
-import TransmissionBarChart from "@/components/bar-chart";
-import { columns } from "@/components/columns";
-import { LogEntriesDataTable } from "@/components/data-table";
+import { columns } from "@/components/data-table/columns";
 import Title from "@/components/title";
 import {
+  ChartPoint,
   DataPoint,
   LogEntry,
-  TransmissionChartPoint,
+  countLogEvents,
   processData,
   processDataForBarChart,
 } from "@/lib/logging-utils";
-
 import { useState } from "react";
+
+import AnalysisBarChart from "@/components/bar-chart";
+import LogEntriesDataTable from "@/components/data-table";
 import FileUploader from "../../components/file-uploader";
 import TimeSeriesChart from "../../components/timeseries-chart";
 
@@ -25,12 +26,11 @@ export default function Page() {
     sent: DataPoint[];
     received: DataPoint[];
   }>({ sent: [], received: [] });
-  const [udpTransmissions, setUdpTransmissions] = useState<
-    TransmissionChartPoint[]
-  >([]);
-  const [loraTransmissions, setLoraTransmissions] = useState<
-    TransmissionChartPoint[]
-  >([]);
+  const [udpTransmissions, setUdpTransmissions] = useState<ChartPoint[]>([]);
+  const [loraTransmissions, setLoraTransmissions] = useState<ChartPoint[]>([]);
+  const [eventsCount, setEventsCount] = useState<Record<string, ChartPoint[]>>(
+    {}
+  );
   const [logData, setLogData] = useState<LogEntry[]>([]);
   const handleFileLoad = (logData: LogEntry[]) => {
     setLogData(logData);
@@ -45,6 +45,8 @@ export default function Page() {
     setUdpTransmissions(udpTransmissions);
     const loraTransmissions = processDataForBarChart(logData, "lora_driver");
     setLoraTransmissions(loraTransmissions);
+    const eventsCount = countLogEvents(logData);
+    setEventsCount(eventsCount);
   };
 
   return (
@@ -65,15 +67,26 @@ export default function Page() {
           />
         </div>
         <div className="flex gap-12 min-w-fit">
-          <TransmissionBarChart
+          <AnalysisBarChart
             chartTitle="UDP Transmissions"
             data={udpTransmissions}
           />
-          <TransmissionBarChart
+          <AnalysisBarChart
             chartTitle="LoRa Transmissions"
             data={loraTransmissions}
           />
         </div>
+        <div className="flex gap-12 min-w-fit">
+          <AnalysisBarChart
+            chartTitle="UDP Events Count"
+            data={eventsCount.udp_driver}
+          />
+          <AnalysisBarChart
+            chartTitle="LoRa Events Count"
+            data={eventsCount.lora_driver}
+          />
+        </div>
+
         <LogEntriesDataTable data={logData} columns={columns} />
       </div>
     </div>

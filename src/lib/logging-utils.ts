@@ -1,4 +1,5 @@
 import { format, parseISO } from "date-fns";
+import { SEND_TO_MAIN_MSG, TRANSMIT_INITIATED_MSG } from "./events";
 export interface LogEntry {
   timestamp: string;
   level: string;
@@ -7,11 +8,17 @@ export interface LogEntry {
     message: string;
     driver: string;
     json_packet?: string;
+    rssi?: number;
   };
 }
 
 export interface DataPoint {
   x: Date;
+  y: number;
+}
+
+export interface ChartPoint {
+  x: string;
   y: number;
 }
 
@@ -43,9 +50,9 @@ export const processData = (
   logData.forEach((entry) => {
     if (entry.fields.driver === driverName) {
       const formattedTime = format(entry.timestamp, "yyyy-MM-dd HH:mm:ss");
-      if (entry.fields.message?.includes("Sending")) {
+      if (entry.fields.message?.includes(SEND_TO_MAIN_MSG)) {
         sentCounts[formattedTime]++;
-      } else if (entry.fields.message?.includes("Received")) {
+      } else if (entry.fields.message?.includes(TRANSMIT_INITIATED_MSG)) {
         receivedCounts[formattedTime]++;
       }
     }
@@ -64,15 +71,10 @@ export const processData = (
   return { sentData, receivedData };
 };
 
-export interface TransmissionChartPoint {
-  date: string;
-  count: number;
-}
-
 export const processDataForBarChart = (
   logData: LogEntry[],
   driverName: string
-): TransmissionChartPoint[] => {
+): ChartPoint[] => {
   let cumulativeCount = 0;
   const dataBySecond: { [key: string]: number } = {};
 
@@ -95,7 +97,42 @@ export const processDataForBarChart = (
   });
 
   return Object.entries(dataBySecond).map(([key, value]) => ({
-    date: format(parseISO(key), "HH:mm:ss"),
-    count: value,
+    x: format(parseISO(key), "HH:mm:ss"),
+    y: value,
   }));
 };
+
+type EventCountDictionary = Record<string, number>;
+
+export function countLogEvents(
+  logEntries: LogEntry[]
+): Record<string, ChartPoint[]> {
+  const driverEventCounts: Record<string, EventCountDictionary> =
+    logEntries.reduce(
+      (acc, entry) => {
+        const driver = entry.fields.driver || "global";
+        const eventMessage = entry.fields.message;
+
+        if (!acc[driver]) {
+          acc[driver] = {};
+        }
+
+        acc[driver][eventMessage] = (acc[driver][eventMessage] || 0) + 1;
+
+        return acc;
+      },
+      {} as Record<string, EventCountDictionary>
+    );
+
+  const driverChartPoints: Record<string, ChartPoint[]> = {};
+
+  for (const driver of Object.keys(driverEventCounts)) {
+    driverChartPoints[driver] = Object.keys(driverEventCounts[driver]).map(
+      (eventMessage) => {
+        return { x: eventMessage, y: driverEventCounts[driver][eventMessage] };
+      }
+    );
+  }
+
+  return driverChartPoints;
+}

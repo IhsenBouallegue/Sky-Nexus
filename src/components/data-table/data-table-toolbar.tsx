@@ -10,10 +10,10 @@ import {
   BugIcon,
   XCircleIcon,
 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { DataTableViewOptions } from "./data-table-view-options";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 
 export const levels = [
   {

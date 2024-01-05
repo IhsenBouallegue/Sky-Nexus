@@ -1,8 +1,14 @@
 import { LogEntry } from "@/lib/logging-utils";
 import { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "../ui/badge";
+import { Checkbox } from "../ui/checkbox";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../ui/hover-card";
 import { DataTableColumnHeader } from "./data-table-column-header";
 import { drivers, levels } from "./data-table-toolbar";
-import { Checkbox } from "./ui/checkbox";
 
 export const columns: ColumnDef<LogEntry>[] = [
   {
@@ -95,6 +101,34 @@ export const columns: ColumnDef<LogEntry>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
+    },
+  },
+  {
+    accessorKey: "fields.json_packet",
+    header: ({ column }) => {
+      return <DataTableColumnHeader column={column} title="Packet" />;
+    },
+    cell: ({ row }) => {
+      const packet = row.original.fields.json_packet;
+
+      if (!packet) {
+        return "n/a";
+      }
+      const packetJson = JSON.parse(packet);
+      return (
+        <div>
+          <HoverCard openDelay={200}>
+            <HoverCardTrigger className="cursor-pointer">
+              <Badge>Message</Badge>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-fit ">
+              <pre className="whitespace-pre-wrap text-sm">
+                {JSON.stringify(packetJson, null, 2)}
+              </pre>
+            </HoverCardContent>
+          </HoverCard>
+        </div>
+      );
     },
   },
   {

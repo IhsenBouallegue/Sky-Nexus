@@ -43,16 +43,21 @@ export default function TimeSeriesChart({
 
   // Populate the combinedData object with data points from all lines
   for (const line of chartLines) {
-    for (const point of line.dataPoints) {
-      const formattedDate = format(parseISO(point.x.toISOString()), "HH:mm:ss");
-      if (!combinedData[formattedDate]) {
-        combinedData[formattedDate] = { date: formattedDate };
-        // Initialize all line dataKeys to null
-        for (const otherLine of chartLines) {
-          combinedData[formattedDate][otherLine.dataKey] = null;
+    if (line.dataPoints && line.dataPoints.length !== 0) {
+      for (const point of line.dataPoints) {
+        const formattedDate = format(
+          parseISO(point.x.toISOString()),
+          "HH:mm:ss"
+        );
+        if (!combinedData[formattedDate]) {
+          combinedData[formattedDate] = { date: formattedDate };
+          // Initialize all line dataKeys to null
+          for (const otherLine of chartLines) {
+            combinedData[formattedDate][otherLine.dataKey] = null;
+          }
         }
+        combinedData[formattedDate][line.dataKey] = point.y;
       }
-      combinedData[formattedDate][line.dataKey] = point.y;
     }
   }
 

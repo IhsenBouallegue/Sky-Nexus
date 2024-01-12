@@ -1,4 +1,4 @@
-import { DataPoint } from "@/lib/logging-utils";
+import { TimeSeriesPoint } from "@/lib/logging-utils";
 import { format, parseISO } from "date-fns";
 import React from "react";
 import {
@@ -14,31 +14,62 @@ import {
 } from "recharts";
 import CustomTooltip from "./custom-tooltip";
 
+interface ChartLine {
+  dataKey: string; // Key in data object
+  color: string; // Line color
+  name: string; // Legend name
+  dataPoints: TimeSeriesPoint[]; // Data points
+  type?:
+    | "monotone"
+    | "natural"
+    | "linear"
+    | "step"
+    | "stepAfter"
+    | "stepBefore";
+  dashed?: boolean;
+}
+
 export default function TimeSeriesChart({
   chartTitle,
-  sentData,
-  receivedData,
+  chartLines,
 }: {
   chartTitle: string;
-  sentData: DataPoint[];
-  receivedData: DataPoint[];
+  chartLines: ChartLine[];
 }) {
-  const data = sentData.map((d, index) => ({
-    date: format(parseISO(d.x.toISOString()), "HH:mm:ss"),
-    sent: d.y,
-    received: receivedData[index] ? receivedData[index].y : null,
-  }));
+  // Create an object where each key is a timestamp and each value is an object
+  // with keys for each data point and null for initial values
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const combinedData: { [key: string]: any } = {};
+
+  // Populate the combinedData object with data points from all lines
+  for (const line of chartLines) {
+    for (const point of line.dataPoints) {
+      const formattedDate = format(parseISO(point.x.toISOString()), "HH:mm:ss");
+      if (!combinedData[formattedDate]) {
+        combinedData[formattedDate] = { date: formattedDate };
+        // Initialize all line dataKeys to null
+        for (const otherLine of chartLines) {
+          combinedData[formattedDate][otherLine.dataKey] = null;
+        }
+      }
+      combinedData[formattedDate][line.dataKey] = point.y;
+    }
+  }
+
+  // Convert the combinedData object to an array for the chart
+  const formattedData = Object.values(combinedData);
 
   return (
     <div className="flex flex-col w-full">
       <h3 className="text-2xl font-semibold mb-4 ml-6">{chartTitle}</h3>
       <ResponsiveContainer height={300}>
-        <LineChart data={data}>
+        <LineChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" />
           <YAxis />
           <Legend />
           <Tooltip content={<CustomTooltip />} />
+
           <Brush
             dataKey="date"
             startIndex={0}
@@ -46,18 +77,16 @@ export default function TimeSeriesChart({
             fill="transparent"
             stroke="hsl(var(--foreground) / 40%)"
           />
-          <Line
-            type="monotone"
-            dataKey="sent"
-            stroke="#22a6b3"
-            name="sent to main"
-          />
-          <Line
-            type="monotone"
-            dataKey="received"
-            stroke="#f0932b"
-            name="received from main"
-          />
+          {chartLines.map((line) => (
+            <Line
+              key={line.name}
+              type={line.type || "monotone"}
+              dataKey={line.dataKey}
+              stroke={line.color}
+              name={line.name}
+              strokeDasharray={line.dashed ? "3 3" : undefined}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -71,19 +71,39 @@ export const columns: ColumnDef<LogEntry>[] = [
   },
 
   {
+    id: "event",
+    accessorFn: (row) => row.span?.name || row.fields.message,
     accessorKey: "fields.message",
     header: ({ column }) => {
       return <DataTableColumnHeader column={column} title="Event" />;
     },
+    cell: ({ row }) => {
+      const event = row.original.fields.message;
+      const span = row.original.span?.name;
+
+      return (
+        <div className="flex flex-col gap-2">
+          {span ? (
+            <div className="text-sm">{span}</div>
+          ) : (
+            <div className="text-sm">{event}</div>
+          )}
+        </div>
+      );
+    },
   },
+
   {
-    accessorKey: "fields.driver",
+    id: "driver",
+    accessorFn: (row) => row.fields.driver || row.span?.driver,
     header: ({ column }) => {
       return <DataTableColumnHeader column={column} title="Driver" />;
     },
     cell: ({ row }) => {
       const driver = drivers.find(
-        (driver) => driver.value.toLowerCase() === row.original.fields.driver
+        (driver) =>
+          driver.value.toLowerCase() ===
+          (row.original.fields.driver || row.original.span?.driver)
       );
 
       if (!driver) {
@@ -99,34 +119,59 @@ export const columns: ColumnDef<LogEntry>[] = [
         </div>
       );
     },
+
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
   },
   {
+    id: "details",
+    accessorFn: (row) =>
+      row.fields.json_packet ||
+      row.fields.rssi ||
+      row.fields["time.busy"] ||
+      row.fields["time.idle"],
     accessorKey: "fields.json_packet",
     header: ({ column }) => {
-      return <DataTableColumnHeader column={column} title="Packet" />;
+      return <DataTableColumnHeader column={column} title="Details" />;
     },
     cell: ({ row }) => {
-      const packet = row.original.fields.json_packet;
+      const packet =
+        // row.original.span?.mavlink_frame ||
+        row.original.fields.json_packet || undefined;
+      const rssi = row.original.fields.rssi;
+      const busy = row.original.fields["time.busy"];
+      const idle = row.original.fields["time.idle"];
 
-      if (!packet) {
-        return "n/a";
-      }
-      const packetJson = JSON.parse(packet);
       return (
-        <div>
-          <HoverCard openDelay={200}>
-            <HoverCardTrigger className="cursor-pointer">
-              <Badge>Message</Badge>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-fit ">
-              <pre className="whitespace-pre-wrap text-sm">
-                {JSON.stringify(packetJson, null, 2)}
-              </pre>
-            </HoverCardContent>
-          </HoverCard>
+        <div className="flex flex-col gap-2">
+          {rssi && (
+            <Badge variant="secondary" className="w-fit">
+              RSSI: {rssi}
+            </Badge>
+          )}
+          {busy && (
+            <Badge variant="secondary" className="w-fit">
+              Busy: {busy}
+            </Badge>
+          )}
+          {idle && (
+            <Badge variant="secondary" className="w-fit">
+              Idle: {idle}
+            </Badge>
+          )}
+          {packet && (
+            <HoverCard openDelay={200}>
+              <HoverCardTrigger className="cursor-pointer">
+                <Badge>Packet</Badge>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-fit ">
+                <pre className="whitespace-pre-wrap text-sm">
+                  {JSON.stringify(JSON.parse(packet), null, 2)}
+                </pre>
+              </HoverCardContent>
+            </HoverCard>
+          )}
         </div>
       );
     },

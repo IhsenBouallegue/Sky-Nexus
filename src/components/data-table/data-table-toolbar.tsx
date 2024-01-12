@@ -60,14 +60,9 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-2">
         <Input
           placeholder="Filter events..."
-          value={
-            (table.getColumn("fields_message")?.getFilterValue() as string) ??
-            ""
-          }
+          value={(table.getColumn("event")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table
-              .getColumn("fields_message")
-              ?.setFilterValue(event.target.value)
+            table.getColumn("event")?.setFilterValue(event.target.value)
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
@@ -78,9 +73,9 @@ export function DataTableToolbar<TData>({
             options={levels}
           />
         )}
-        {table.getColumn("fields_driver") && (
+        {table.getColumn("driver") && (
           <DataTableFacetedFilter
-            column={table.getColumn("fields_driver")}
+            column={table.getColumn("driver")}
             title="Driver"
             options={drivers}
           />

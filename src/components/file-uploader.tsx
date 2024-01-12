@@ -1,12 +1,11 @@
 import { Input } from "@/components/ui/input";
 import { LogEntry } from "@/lib/logging-utils";
+import { useAnalysisStore } from "@/lib/store";
 import { ChangeEvent } from "react";
 
-export default function FileUploader({
-  onFileLoad,
-}: {
-  onFileLoad: (data: LogEntry[]) => void;
-}) {
+export default function FileUploader() {
+  const setLogEntries = useAnalysisStore((state) => state.setLogEntries);
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -18,7 +17,7 @@ export default function FileUploader({
           const jsonArrayString = `[${text.replace(/}\s*{/g, "},{")}]`;
           try {
             const logEntries: LogEntry[] = JSON.parse(jsonArrayString);
-            onFileLoad(logEntries);
+            setLogEntries(logEntries);
           } catch (error) {
             console.error("Error parsing JSON:", error);
           }

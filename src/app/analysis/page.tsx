@@ -3,91 +3,131 @@
 import { columns } from "@/components/data-table/columns";
 import Title from "@/components/title";
 import {
-  ChartPoint,
-  DataPoint,
-  LogEntry,
+  ChannelActivityRecord,
+  analyzeChannelActivity,
   countLogEvents,
-  processData,
-  processDataForBarChart,
+  countMessageTypes,
 } from "@/lib/logging-utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import AnalysisBarChart from "@/components/bar-chart";
 import LogEntriesDataTable from "@/components/data-table";
+import NetworkTimeline from "@/components/network-timeline";
+import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
+import { useAnalysisStore } from "@/lib/store";
 import FileUploader from "../../components/file-uploader";
 import TimeSeriesChart from "../../components/timeseries-chart";
 
 export default function Page() {
-  const [chartData, setChartData] = useState<{
-    sent: DataPoint[];
-    received: DataPoint[];
-  }>({ sent: [], received: [] });
-  const [chart2Data, setChart2Data] = useState<{
-    sent: DataPoint[];
-    received: DataPoint[];
-  }>({ sent: [], received: [] });
-  const [udpTransmissions, setUdpTransmissions] = useState<ChartPoint[]>([]);
-  const [loraTransmissions, setLoraTransmissions] = useState<ChartPoint[]>([]);
-  const [eventsCount, setEventsCount] = useState<Record<string, ChartPoint[]>>(
+  const logEntries = useAnalysisStore((state) => state.logEntries);
+  const [channelActivity, setChannelActivity] = useState<ChannelActivityRecord>(
     {}
   );
-  const [logData, setLogData] = useState<LogEntry[]>([]);
-  const handleFileLoad = (logData: LogEntry[]) => {
-    setLogData(logData);
-    const { sentData, receivedData } = processData(logData, "udp_driver");
-    setChartData({ sent: sentData, received: receivedData });
-    const { sentData: sentLora, receivedData: receivedLora } = processData(
-      logData,
-      "lora_driver"
-    );
-    setChart2Data({ sent: sentLora, received: receivedLora });
-    const udpTransmissions = processDataForBarChart(logData, "udp_driver");
-    setUdpTransmissions(udpTransmissions);
-    const loraTransmissions = processDataForBarChart(logData, "lora_driver");
-    setLoraTransmissions(loraTransmissions);
-    const eventsCount = countLogEvents(logData);
-    setEventsCount(eventsCount);
-  };
+
+  useEffect(() => {
+    setChannelActivity(analyzeChannelActivity(logEntries));
+  }, [logEntries]);
 
   return (
     <div className="flex flex-col p-6 w-full">
       <Title>Log Event Analysis</Title>
       <div className="flex flex-col gap-12">
-        <FileUploader onFileLoad={handleFileLoad} />
+        <FileUploader />
         <div className="flex gap-12 min-w-fit">
-          <TimeSeriesChart
-            chartTitle="Channels: UDP Network to Main"
-            sentData={chartData.sent}
-            receivedData={chartData.received}
-          />
-          <TimeSeriesChart
-            chartTitle="Channels: LoRa Network to Main"
-            sentData={chart2Data.sent}
-            receivedData={chart2Data.received}
-          />
+          {channelActivity.udp_driver && (
+            <TimeSeriesChart
+              chartTitle="Channels: UDP Network <-> Main"
+              chartLines={[
+                {
+                  dataKey: "sentMessages",
+                  dataPoints: channelActivity.udp_driver.sentMessages,
+                  color: "#f0932b",
+                  name: "UDP -> Main",
+                },
+                {
+                  dataKey: "receivedMessages",
+                  dataPoints: channelActivity.udp_driver.receivedMessages,
+                  color: "#22a6b3",
+                  name: "UDP <- Main",
+                },
+                {
+                  dataKey: "transmissions",
+                  dataPoints:
+                    countTransmissionsPerSecond(logEntries).udp_driver,
+                  color: "#6ab04c",
+                  name: "Transmissions",
+                  type: "linear",
+                  dashed: true,
+                },
+              ]}
+            />
+          )}
+          {channelActivity.lora_driver && (
+            <TimeSeriesChart
+              chartTitle="Channels: LoRa Network <-> Main"
+              chartLines={[
+                {
+                  dataKey: "sentMessages",
+                  dataPoints: channelActivity.lora_driver.sentMessages,
+                  color: "#f0932b",
+                  name: "LoRa -> Main",
+                  type: "linear",
+                },
+                {
+                  dataKey: "receivedMessages",
+                  dataPoints: channelActivity.lora_driver.receivedMessages,
+                  color: "#22a6b3",
+                  name: "LoRa <- Main",
+                  type: "linear",
+                },
+                {
+                  dataKey: "transmissions",
+                  dataPoints:
+                    countTransmissionsPerSecond(logEntries).lora_driver,
+                  color: "#6ab04c",
+                  name: "Transmissions",
+                  type: "linear",
+                  dashed: true,
+                },
+              ]}
+            />
+          )}
         </div>
-        <div className="flex gap-12 min-w-fit">
+        {/* <div className="flex gap-12 min-w-fit">
           <AnalysisBarChart
             chartTitle="UDP Transmissions"
-            data={udpTransmissions}
+          data={udpTransmissions}
           />
           <AnalysisBarChart
             chartTitle="LoRa Transmissions"
             data={loraTransmissions}
           />
-        </div>
+        </div> */}
         <div className="flex gap-12 min-w-fit">
           <AnalysisBarChart
             chartTitle="UDP Events Count"
-            data={eventsCount.udp_driver}
+            data={countLogEvents(logEntries).udp_driver}
           />
           <AnalysisBarChart
             chartTitle="LoRa Events Count"
-            data={eventsCount.lora_driver}
+            data={countLogEvents(logEntries).lora_driver}
           />
         </div>
-
-        <LogEntriesDataTable data={logData} columns={columns} />
+        <div className="flex gap-12 min-w-fit">
+          <AnalysisBarChart
+            chartTitle="UDP Message Types Received"
+            data={countMessageTypes(logEntries).udp_driver}
+          />
+          <AnalysisBarChart
+            chartTitle="LoRa Message Types Received"
+            data={countMessageTypes(logEntries).lora_driver}
+          />
+        </div>
+        <div className="ml-6">
+          <h3 className="text-2xl font-semibold mb-8">Network Timeline</h3>
+          <NetworkTimeline logEntries={logEntries} />
+        </div>
+        <LogEntriesDataTable data={logEntries} columns={columns} />
       </div>
     </div>
   );

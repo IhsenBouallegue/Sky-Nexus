@@ -1,5 +1,9 @@
-import { format, parseISO } from "date-fns";
-import { SEND_TO_MAIN_MSG, TRANSMIT_INITIATED_MSG } from "./events";
+import { differenceInSeconds, format, parseISO } from "date-fns";
+import {
+  RECEIVE_PACKET_MSG,
+  SEND_TO_MAIN_MSG,
+  SEND_TO_NETWORK_MSG,
+} from "./events";
 export interface LogEntry {
   timestamp: string;
   level: string;
@@ -9,10 +13,19 @@ export interface LogEntry {
     driver: string;
     json_packet?: string;
     rssi?: number;
+    "time.busy": string;
+    "time.idle": string;
   };
+  span?: {
+    driver: string;
+    name: string;
+    mavlink_frame?: string;
+  };
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  spans: any[];
 }
 
-export interface DataPoint {
+export interface TimeSeriesPoint {
   x: Date;
   y: number;
 }
@@ -22,53 +35,55 @@ export interface ChartPoint {
   y: number;
 }
 
-export const processData = (
-  logData: LogEntry[],
-  driverName: string
-): { sentData: DataPoint[]; receivedData: DataPoint[] } => {
-  const sentCounts: { [key: string]: number } = {};
-  const receivedCounts: { [key: string]: number } = {};
+type ChannelActivity = {
+  sentMessages: TimeSeriesPoint[];
+  receivedMessages: TimeSeriesPoint[];
+};
 
-  // Find the start and end time of the logs
-  const times = logData.map((entry) => entry.timestamp);
-  const startTime = new Date(times[0]);
-  const endTime = new Date(times[times.length - 1]);
+export type ChannelActivityRecord = Record<string, ChannelActivity>;
 
-  // Initialize every second between start and end time to 0
-  for (
-    let time = new Date(startTime);
-    time <= endTime;
-    time.setSeconds(time.getSeconds() + 1)
-  ) {
-    const formattedTime = format(time, "yyyy-MM-dd HH:mm:ss");
-    sentCounts[formattedTime] = 0;
-    receivedCounts[formattedTime] = 0;
-  }
+export const analyzeChannelActivity = (
+  logEntries: LogEntry[]
+): ChannelActivityRecord => {
+  const channelActivity: ChannelActivityRecord = {};
+  if (logEntries.length === 0) return channelActivity;
 
-  // Count the sent and received messages per second
-  // biome-ignore lint/complexity/noForEach: <explanation>
-  logData.forEach((entry) => {
-    if (entry.fields.driver === driverName) {
-      const formattedTime = format(entry.timestamp, "yyyy-MM-dd HH:mm:ss");
-      if (entry.fields.message?.includes(SEND_TO_MAIN_MSG)) {
-        sentCounts[formattedTime]++;
-      } else if (entry.fields.message?.includes(TRANSMIT_INITIATED_MSG)) {
-        receivedCounts[formattedTime]++;
+  // Assuming logEntries are sorted by timestamp
+  const startTime = new Date(logEntries[0].timestamp);
+  const endTime = new Date(logEntries[logEntries.length - 1].timestamp);
+
+  // Initialize channel activity records
+  for (const entry of logEntries) {
+    const driver = entry.fields.driver;
+    if (!channelActivity[driver]) {
+      channelActivity[driver] = { sentMessages: [], receivedMessages: [] };
+      for (
+        let time = new Date(startTime);
+        time <= endTime;
+        time.setSeconds(time.getSeconds() + 1)
+      ) {
+        channelActivity[driver].sentMessages.push({ x: new Date(time), y: 0 });
+        channelActivity[driver].receivedMessages.push({
+          x: new Date(time),
+          y: 0,
+        });
       }
     }
-  });
+  }
 
-  // Transform the counts into DataPoint arrays
-  const sentData: DataPoint[] = Object.keys(sentCounts).map((time) => ({
-    x: parseISO(time),
-    y: sentCounts[time],
-  }));
-  const receivedData: DataPoint[] = Object.keys(receivedCounts).map((time) => ({
-    x: parseISO(time),
-    y: receivedCounts[time],
-  }));
+  // Count the sent and received messages per second for each driver
+  for (const entry of logEntries) {
+    const driver = entry.fields.driver;
+    const timeIndex = differenceInSeconds(new Date(entry.timestamp), startTime);
 
-  return { sentData, receivedData };
+    if (entry.fields.message?.includes(SEND_TO_MAIN_MSG)) {
+      channelActivity[driver].sentMessages[timeIndex].y++;
+    } else if (entry.fields.message?.includes(SEND_TO_NETWORK_MSG)) {
+      channelActivity[driver].receivedMessages[timeIndex].y++;
+    }
+  }
+
+  return channelActivity;
 };
 
 export const processDataForBarChart = (
@@ -135,4 +150,48 @@ export function countLogEvents(
   }
 
   return driverChartPoints;
+}
+
+export function countMessageTypes(
+  logEntries: LogEntry[]
+): Record<string, ChartPoint[]> {
+  const chartData: Record<string, { [msgType: string]: number }> = {};
+
+  for (const entry of logEntries) {
+    // Only proceed if the message indicates a received packet
+    if (entry.fields.message === RECEIVE_PACKET_MSG) {
+      const { driver, json_packet } = entry.fields;
+      if (json_packet) {
+        try {
+          const packet = JSON.parse(json_packet);
+          const msgType = packet.msg?.type;
+
+          if (msgType) {
+            if (!chartData[driver]) {
+              chartData[driver] = {};
+            }
+
+            if (!chartData[driver][msgType]) {
+              chartData[driver][msgType] = 1;
+            } else {
+              chartData[driver][msgType] += 1;
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing JSON packet:", error);
+        }
+      }
+    }
+  }
+
+  // Convert the intermediate object into an array of ChartPoints
+  const chartPoints: Record<string, ChartPoint[]> = {};
+  for (const [driver, counts] of Object.entries(chartData)) {
+    chartPoints[driver] = Object.entries(counts).map(([msgType, count]) => ({
+      x: msgType,
+      y: count,
+    }));
+  }
+
+  return chartPoints;
 }

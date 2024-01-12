@@ -16,26 +16,10 @@ export default function CustomTooltip({
 }: CustomTooltipProps) {
   if (active && payload && payload.length > 0) {
     return (
-      <div
-        style={{
-          backgroundColor: "#5b63ffe7",
-          padding: "10px",
-          borderRadius: "10px",
-          boxShadow: "1px 2px 10px -2px #7873ffb1",
-        }}
-      >
+      <div className="bg-accent text-accent-foreground rounded-md shadow-md p-2">
         {label}
         {payload.map((pld: payloadType) => (
-          <p
-            key={pld.name}
-            style={{
-              borderStyle: "solid 1px",
-              fontSize: "13px",
-              fontWeight: "600",
-              fontFamily: "sans-serif",
-              color: "#fff",
-            }}
-          >
+          <p key={pld.name} className="text-sm text-white">
             {`${pld.name} : ${pld.value}`}
           </p>
         ))}

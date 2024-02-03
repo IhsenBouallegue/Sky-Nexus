@@ -1,9 +1,5 @@
 import { differenceInSeconds, format, parseISO } from "date-fns";
-import {
-  RECEIVE_PACKET_MSG,
-  SEND_TO_MAIN_MSG,
-  SEND_TO_NETWORK_MSG,
-} from "./events";
+import { SEND_TO_MAIN_MSG, SEND_TO_NETWORK_MSG } from "./events";
 export interface LogEntry {
   timestamp: string;
   level: string;
@@ -122,22 +118,22 @@ type EventCountDictionary = Record<string, number>;
 export function countLogEvents(
   logEntries: LogEntry[]
 ): Record<string, ChartPoint[]> {
-  const driverEventCounts: Record<string, EventCountDictionary> =
-    logEntries.reduce(
-      (acc, entry) => {
-        const driver = entry.fields.driver || "global";
-        const eventMessage = entry.fields.message;
+  const driverEventCounts: Record<string, EventCountDictionary> = {};
 
-        if (!acc[driver]) {
-          acc[driver] = {};
-        }
+  for (const entry of logEntries) {
+    const driver = entry.fields.driver || "global";
+    const eventMessage = entry.fields.message;
 
-        acc[driver][eventMessage] = (acc[driver][eventMessage] || 0) + 1;
+    if (!driverEventCounts[driver]) {
+      driverEventCounts[driver] = {};
+    }
 
-        return acc;
-      },
-      {} as Record<string, EventCountDictionary>
-    );
+    if (!driverEventCounts[driver][eventMessage]) {
+      driverEventCounts[driver][eventMessage] = 1;
+    } else {
+      driverEventCounts[driver][eventMessage]++;
+    }
+  }
 
   const driverChartPoints: Record<string, ChartPoint[]> = {};
 
@@ -153,13 +149,14 @@ export function countLogEvents(
 }
 
 export function countMessageTypes(
-  logEntries: LogEntry[]
+  logEntries: LogEntry[],
+  message_type: string
 ): Record<string, ChartPoint[]> {
   const chartData: Record<string, { [msgType: string]: number }> = {};
 
   for (const entry of logEntries) {
     // Only proceed if the message indicates a received packet
-    if (entry.fields.message === RECEIVE_PACKET_MSG) {
+    if (entry.fields.message === message_type) {
       const { driver, json_packet } = entry.fields;
       if (json_packet) {
         try {

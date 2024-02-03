@@ -27,6 +27,7 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
     "@tanstack/react-table": "^8.11.2",
+    "@tauri-apps/api": "^1.5.3",
     "@types/d3-time-format": "^4.0.3",
     "@types/react-plotly.js": "^2.6.3",
     "class-variance-authority": "^0.7.0",

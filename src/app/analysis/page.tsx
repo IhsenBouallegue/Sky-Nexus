@@ -13,6 +13,7 @@ import LogEntriesDataTable from "@/components/data-table";
 import NetworkTimeline from "@/components/network-timeline";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
 import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import { useAnalysisStore } from "@/lib/store";
 import { XIcon } from "lucide-react";
@@ -125,11 +126,30 @@ export default function Page() {
               <div className="flex gap-12 min-w-fit">
                 <AnalysisBarChart
                   chartTitle="UDP Message Types Received"
-                  data={countMessageTypes(logEntries).udp_driver}
+                  data={
+                    countMessageTypes(logEntries, RECEIVE_PACKET_MSG).udp_driver
+                  }
                 />
                 <AnalysisBarChart
                   chartTitle="LoRa Message Types Received"
-                  data={countMessageTypes(logEntries).lora_driver}
+                  data={
+                    countMessageTypes(logEntries, RECEIVE_PACKET_MSG)
+                      .lora_driver
+                  }
+                />
+              </div>
+              <div className="flex gap-12 min-w-fit">
+                <AnalysisBarChart
+                  chartTitle="UDP Message Types Sent"
+                  data={
+                    countMessageTypes(logEntries, SEND_PACKET_MSG).udp_driver
+                  }
+                />
+                <AnalysisBarChart
+                  chartTitle="LoRa Message Types Sent"
+                  data={
+                    countMessageTypes(logEntries, SEND_PACKET_MSG).lora_driver
+                  }
                 />
               </div>
               <div className="ml-6">

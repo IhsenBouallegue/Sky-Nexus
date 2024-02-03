@@ -1,3 +1,5 @@
+"use client";
+
 import Title from "@/components/title";
 import {
   Accordion,
@@ -5,8 +7,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect } from "react";
 
 export default function Page() {
+  useEffect(() => {
+    console.log("Listening for messages from UAV...");
+
+    listen("uav_message", (event) => {
+      console.log("Received message from UAV:", event.payload);
+    });
+  }, []);
+
   return (
     <div className="flex flex-col p-6 w-full">
       <Title>Network</Title>
@@ -26,7 +38,7 @@ export default function Page() {
         </AccordionItem>
         <AccordionItem value="4">
           <AccordionTrigger>Device List</AccordionTrigger>
-          <AccordionContent>Content</AccordionContent>
+          <AccordionContent>Som</AccordionContent>
         </AccordionItem>
         <AccordionItem value="5">
           <AccordionTrigger>System ID and Component ID</AccordionTrigger>

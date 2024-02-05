@@ -3,6 +3,7 @@
 import { columns } from "@/components/data-table/columns";
 import Title from "@/components/title";
 import {
+  LogEntry,
   analyzeChannelActivity,
   countLogEvents,
   countMessageTypes,
@@ -16,14 +17,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
 import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import { useAnalysisStore } from "@/lib/store";
+import { Event, listen } from "@tauri-apps/api/event";
 import { XIcon } from "lucide-react";
+import { useEffect } from "react";
 import FileUploader from "../../components/file-uploader";
 import TimeSeriesChart from "../../components/timeseries-chart";
 
 export default function Page() {
   const logData = useAnalysisStore((state) => state.logData);
   const removeLogEntries = useAnalysisStore((state) => state.removeLogEntries);
+  const addLogEntriy = useAnalysisStore((state) => state.addLogEntry);
+  useEffect(() => {
+    const handleMessage = (event: Event<string>) => {
+      console.log("Received message from backend:", event.payload);
+      addLogEntriy("Websocket", JSON.parse(event.payload) as LogEntry);
+    };
+    const listener = listen("message", handleMessage);
 
+    return () => {
+      listener.then((unlisten) => unlisten());
+    };
+  }, [addLogEntriy]);
   return (
     <div className="flex flex-col p-6 w-full">
       <Title>Log Event Analysis</Title>

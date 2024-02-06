@@ -3,12 +3,18 @@
 
 mod utils;
 
+use std::time::Duration;
+
 use tauri::{Manager, Window};
 
 use futures_util::stream::StreamExt;
 use tauri::command;
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, UdpSocket};
+use tokio::time::Instant;
 use tokio_tungstenite::accept_async;
+
+const SERVER_DISCOVERY_MSG: &str = "WebSocketServer";
+const CLIENT_DISCOVERY_MSG: &str = "Connected";
 
 #[command]
 async fn start_websocket_server(window: Window) {
@@ -16,31 +22,72 @@ async fn start_websocket_server(window: Window) {
     let listener = try_socket.expect("Failed to bind");
     println!("WebSocket Server listening on ws://0.0.0.0:8080");
 
-    while let Ok((stream, _)) = listener.accept().await {
-        tokio::spawn(handle_connection(window.clone(), stream));
+    while let Ok((stream, addr)) = listener.accept().await {
+        tokio::spawn(handle_connection(window.clone(), stream, addr));
     }
 }
 
-async fn handle_connection(window: Window, stream: tokio::net::TcpStream) {
+async fn handle_connection(
+    window: Window,
+    stream: tokio::net::TcpStream,
+    addr: std::net::SocketAddr,
+) {
     if let Ok(ws_stream) = accept_async(stream).await {
         let (_write, mut read) = ws_stream.split();
         while let Some(message) = read.next().await {
             if let Ok(msg) = message {
-                // Echo the message back or handle accordingly
                 println!("Received message: {}", msg.to_string());
                 window
-                    .emit("message", msg.to_string())
+                    .emit("message", (msg.to_string(), addr.to_string()))
                     .expect("Failed to emit message");
-                // write.send(msg).await.unwrap();
             }
         }
     }
 }
 
+#[command]
+async fn connect() {
+    let broadcast_addr = "192.168.1.255:8080";
+    let socket = UdpSocket::bind("0.0.0.0:8080")
+        .await
+        .expect("Failed to bind UDP socket");
+    socket
+        .set_broadcast(true)
+        .expect("Failed to set socket to broadcast mode");
+
+    let mut count = 3;
+    while count > 0 {
+        let start_time = Instant::now();
+        println!("Searching for Client");
+        while start_time.elapsed() < Duration::from_secs(1) {
+            let _ = socket
+                .send_to(SERVER_DISCOVERY_MSG.as_bytes(), broadcast_addr)
+                .await;
+            let mut buffer = [0; 1024];
+            match socket.recv_from(&mut buffer).await {
+                Ok((size, _)) => {
+                    let message = std::str::from_utf8(&buffer[..size]).unwrap_or("");
+                    if message.trim() == CLIENT_DISCOVERY_MSG {
+                        println!("Client Connected");
+                        break;
+                    }
+                }
+                Err(_) => {
+                    println!("Error occurred");
+                    break;
+                }
+            }
+        }
+        count -= 1;
+    }
+
+    println!("No Client Found");
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(setup)
-        .invoke_handler(tauri::generate_handler![start_websocket_server])
+        .invoke_handler(tauri::generate_handler![start_websocket_server, connect])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

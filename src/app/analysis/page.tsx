@@ -1,24 +1,24 @@
 "use client";
 
+import AnalysisBarChart from "@/components/bar-chart";
+import LogEntriesDataTable from "@/components/data-table";
 import { columns } from "@/components/data-table/columns";
+import NetworkTimeline from "@/components/network-timeline";
 import Title from "@/components/title";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
+import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import {
   LogEntry,
   analyzeChannelActivity,
   countLogEvents,
   countMessageTypes,
 } from "@/lib/logging-utils";
-
-import AnalysisBarChart from "@/components/bar-chart";
-import LogEntriesDataTable from "@/components/data-table";
-import NetworkTimeline from "@/components/network-timeline";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
-import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import { useAnalysisStore } from "@/lib/store";
+import { invoke } from "@tauri-apps/api";
 import { Event, listen } from "@tauri-apps/api/event";
-import { XIcon } from "lucide-react";
+import { Plug2Icon, XIcon } from "lucide-react";
 import { useEffect } from "react";
 import FileUploader from "../../components/file-uploader";
 import TimeSeriesChart from "../../components/timeseries-chart";
@@ -27,10 +27,13 @@ export default function Page() {
   const logData = useAnalysisStore((state) => state.logData);
   const removeLogEntries = useAnalysisStore((state) => state.removeLogEntries);
   const addLogEntriy = useAnalysisStore((state) => state.addLogEntry);
+
   useEffect(() => {
-    const handleMessage = (event: Event<string>) => {
-      console.log("Received message from backend:", event.payload);
-      addLogEntriy("Websocket", JSON.parse(event.payload) as LogEntry);
+    const handleMessage = (event: Event<[string, string]>) => {
+      const data = JSON.parse(event.payload[0]) as LogEntry;
+      const addr = event.payload[1];
+      console.log("Received message from backend:", data, " from ", addr);
+      addLogEntriy(addr, data);
     };
     const listener = listen("message", handleMessage);
 
@@ -42,8 +45,8 @@ export default function Page() {
     <div className="flex flex-col p-6 w-full">
       <Title>Log Event Analysis</Title>
       <Tabs defaultValue="account">
-        <div className="flex justify-between w-full">
-          <TabsList>
+        <div className="flex justify-between w-full gap-4">
+          <TabsList className="w-full justify-start">
             {Object.keys(logData).map((key) => (
               <TabsTrigger key={key} value={key}>
                 {key}
@@ -58,7 +61,12 @@ export default function Page() {
               </TabsTrigger>
             ))}
           </TabsList>
-          <FileUploader />
+          <div className="flex gap-4">
+            <FileUploader />
+            <Button onClick={() => invoke("connect")}>
+              <Plug2Icon className="mr-2 h-4 w-4" /> Connect
+            </Button>
+          </div>
         </div>
         {Object.entries(logData).map(([key, logEntries]) => (
           <TabsContent key={key} value={key}>

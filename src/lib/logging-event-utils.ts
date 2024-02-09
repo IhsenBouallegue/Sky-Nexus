@@ -10,7 +10,7 @@ interface DriverEvents {
   receiving: EventDuration[];
 }
 
-type NetworkEvents = Record<string, DriverEvents>;
+export type NetworkEvents = Record<string, DriverEvents>;
 
 export function extractNetworkEventDurations(
   logEntries: LogEntry[]

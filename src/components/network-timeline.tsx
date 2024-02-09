@@ -1,10 +1,6 @@
-import {
-  extractNetworkEventDurations,
-  normalizeEventTimes,
-} from "@/lib/logging-event-utils";
-import { LogEntry } from "@/lib/logging-utils";
+import { NetworkEvents, normalizeEventTimes } from "@/lib/logging-event-utils";
 import { cn } from "@/lib/utils";
-import React from "react";
+import React, { useMemo } from "react";
 
 interface ChartPoint {
   start: number;
@@ -12,22 +8,17 @@ interface ChartPoint {
 }
 
 export default function NetworkTimeline({
-  logEntries,
-}: { logEntries: LogEntry[] }) {
-  const rawNetworkEvents = extractNetworkEventDurations(logEntries);
-
-  // Find the earliest and latest timestamps to define the range of the timeline
-  const timestamps = logEntries.map((entry) =>
-    new Date(entry.timestamp).getTime()
-  );
-  const globalStart = Math.min(...timestamps);
-  const globalEnd = Math.max(...timestamps);
-
-  // Normalize the event durations
-  const networkEvents = normalizeEventTimes(
-    rawNetworkEvents,
-    globalStart,
-    globalEnd
+  globalStart,
+  globalEnd,
+  rawNetworkEvents,
+}: {
+  rawNetworkEvents: NetworkEvents;
+  globalStart: number;
+  globalEnd: number;
+}) {
+  const networkEvents = useMemo(
+    () => normalizeEventTimes(rawNetworkEvents, globalStart, globalEnd),
+    [rawNetworkEvents, globalStart, globalEnd]
   );
 
   const renderEventBar = (event: ChartPoint, color: string, index: number) => {

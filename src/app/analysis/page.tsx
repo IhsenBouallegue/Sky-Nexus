@@ -8,6 +8,7 @@ import Title from "@/components/title";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
+import { extractNetworkEventDurations } from "@/lib/logging-event-utils";
 import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import {
   LogEntry,
@@ -32,7 +33,6 @@ export default function Page() {
     const handleMessage = (event: Event<[string, string]>) => {
       const data = JSON.parse(event.payload[0]) as LogEntry;
       const addr = event.payload[1];
-      console.log("Received message from backend:", data, " from ", addr);
       addLogEntriy(addr, data);
     };
     const listener = listen("message", handleMessage);
@@ -178,7 +178,19 @@ export default function Page() {
                 <h3 className="text-2xl font-semibold mb-8">
                   Network Timeline
                 </h3>
-                <NetworkTimeline logEntries={logEntries} />
+                <NetworkTimeline
+                  rawNetworkEvents={extractNetworkEventDurations(logEntries)}
+                  globalStart={Math.min(
+                    ...logEntries.map((entry) =>
+                      new Date(entry.timestamp).getTime()
+                    )
+                  )}
+                  globalEnd={Math.max(
+                    ...logEntries.map((entry) =>
+                      new Date(entry.timestamp).getTime()
+                    )
+                  )}
+                />
               </div>
               <LogEntriesDataTable data={logEntries} columns={columns} />
             </div>

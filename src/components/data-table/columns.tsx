@@ -136,9 +136,7 @@ export const columns: ColumnDef<LogEntry>[] = [
       return <DataTableColumnHeader column={column} title="Details" />;
     },
     cell: ({ row }) => {
-      const packet =
-        // row.original.span?.mavlink_frame ||
-        row.original.fields.json_packet || undefined;
+      const packet = row.original.fields.json_packet || undefined;
       const rssi = row.original.fields.rssi;
       const busy = row.original.fields["time.busy"];
       const idle = row.original.fields["time.idle"];
@@ -161,16 +159,19 @@ export const columns: ColumnDef<LogEntry>[] = [
             </Badge>
           )}
           {packet && (
-            <HoverCard openDelay={200}>
-              <HoverCardTrigger className="cursor-pointer">
-                <Badge>Packet</Badge>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-fit ">
-                <pre className="whitespace-pre-wrap text-sm">
-                  {JSON.stringify(JSON.parse(packet), null, 2)}
-                </pre>
-              </HoverCardContent>
-            </HoverCard>
+            <>
+              <HoverCard openDelay={200}>
+                <HoverCardTrigger className="cursor-pointer">
+                  <Badge>Packet</Badge>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-fit ">
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {JSON.stringify(JSON.parse(packet), null, 2)}
+                  </pre>
+                </HoverCardContent>
+              </HoverCard>
+              <Badge className="w-fit">{JSON.parse(packet).msg.type}</Badge>
+            </>
           )}
         </div>
       );

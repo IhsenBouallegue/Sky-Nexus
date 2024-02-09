@@ -38,7 +38,7 @@ export function extractNetworkEventDurations(
   return events;
 }
 // Helper function to parse duration strings (e.g., "56.1µs", "44.1ms") into milliseconds
-function parseDuration(durationStr: string): number {
+export function parseDuration(durationStr: string): number {
   const units = {
     ns: 1e-6, // nanoseconds to milliseconds
     µs: 1e-3, // microseconds to milliseconds

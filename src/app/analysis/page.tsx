@@ -3,12 +3,11 @@
 import AnalysisBarChart from "@/components/bar-chart";
 import LogEntriesDataTable from "@/components/data-table";
 import { columns } from "@/components/data-table/columns";
-import NetworkTimeline from "@/components/network-timeline";
+import GanttChart, { extractSpans } from "@/components/gantt-chart";
 import Title from "@/components/title";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RECEIVE_PACKET_MSG, SEND_PACKET_MSG } from "@/lib/events";
-import { extractNetworkEventDurations } from "@/lib/logging-event-utils";
 import { countTransmissionsPerSecond } from "@/lib/logging-transmissions";
 import {
   LogEntry,
@@ -178,19 +177,7 @@ export default function Page() {
                 <h3 className="text-2xl font-semibold mb-8">
                   Network Timeline
                 </h3>
-                <NetworkTimeline
-                  rawNetworkEvents={extractNetworkEventDurations(logEntries)}
-                  globalStart={Math.min(
-                    ...logEntries.map((entry) =>
-                      new Date(entry.timestamp).getTime()
-                    )
-                  )}
-                  globalEnd={Math.max(
-                    ...logEntries.map((entry) =>
-                      new Date(entry.timestamp).getTime()
-                    )
-                  )}
-                />
+                <GanttChart spans={extractSpans(logEntries)} />
               </div>
               <LogEntriesDataTable data={logEntries} columns={columns} />
             </div>

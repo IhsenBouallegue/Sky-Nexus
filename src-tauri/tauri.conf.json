@@ -56,10 +56,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 1000,
         "resizable": true,
-        "title": "Mavlink Network Analysis",
-        "width": 800
+        "title": "Sky Nexus",
+        "width": 1200
       }
     ]
   }

@@ -16,7 +16,6 @@ import {
   countMessageTypes,
 } from "@/lib/logging-utils";
 import { useAnalysisStore } from "@/lib/store";
-import { invoke } from "@tauri-apps/api";
 import { Event, listen } from "@tauri-apps/api/event";
 import { Plug2Icon, XIcon } from "lucide-react";
 import { useEffect } from "react";
@@ -62,7 +61,12 @@ export default function Page() {
           </TabsList>
           <div className="flex gap-4">
             <FileUploader />
-            <Button onClick={() => invoke("connect")}>
+            <Button
+              onClick={async () => {
+                const { invoke } = await import("@tauri-apps/api");
+                invoke("connect");
+              }}
+            >
               <Plug2Icon className="mr-2 h-4 w-4" /> Connect
             </Button>
           </div>

@@ -39,6 +39,7 @@
     "date-fns": "^3.0.6",
     "immer": "^10.0.3",
     "lucide-react": "^0.303.0",
+    "mini-svg-data-uri": "^1.4.4",
     "next": "14.0.4",
     "next-themes": "^0.2.1",
     "plotly.js": "^2.27.1",

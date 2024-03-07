@@ -2,6 +2,11 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+[Rust Bindgen](https://rust-lang.github.io/rust-bindgen/requirements.html)
+```
+winget install LLVM.LLVM
+```
+
 First, run the development server:
 
 ```bash

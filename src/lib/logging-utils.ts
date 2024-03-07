@@ -114,10 +114,9 @@ export const processDataForBarChart = (
 };
 
 type EventCountDictionary = Record<string, number>;
+export type EventCountRecord = Record<string, ChartPoint[]>;
 
-export function countLogEvents(
-  logEntries: LogEntry[]
-): Record<string, ChartPoint[]> {
+export function countLogEvents(logEntries: LogEntry[]): EventCountRecord {
   const driverEventCounts: Record<string, EventCountDictionary> = {};
 
   for (const entry of logEntries) {
@@ -148,14 +147,15 @@ export function countLogEvents(
   return driverChartPoints;
 }
 
+export type MessageTypeCountRecord = Record<string, ChartPoint[]>;
+
 export function countMessageTypes(
   logEntries: LogEntry[],
   message_type: string
-): Record<string, ChartPoint[]> {
+): MessageTypeCountRecord {
   const chartData: Record<string, { [msgType: string]: number }> = {};
 
   for (const entry of logEntries) {
-    // Only proceed if the message indicates a received packet
     if (entry.fields.message === message_type) {
       const { driver, json_packet } = entry.fields;
       if (json_packet) {

@@ -26,6 +26,8 @@ export function extractSpans(logEntries: LogEntry[]): Spans {
   for (const entry of logEntries) {
     // Skip entries that are not spans
     if (!entry.span || !entry.fields["time.busy"]) {
+      console.log("Skipping entry", entry);
+
       continue;
     }
     const { name } = entry.span;
@@ -46,7 +48,9 @@ export function extractSpans(logEntries: LogEntry[]): Spans {
 
 export default function GanttChart({ spans }: { spans: Spans }) {
   // Calculate the earliest start time and the latest end time for all spans
+  // console.log(spans);
   const allSpans = Object.values(spans).flat();
+
   const earliestStart = Math.min(...allSpans.map((span) => span.start));
   const latestEnd = Math.max(...allSpans.map((span) => span.end));
   const totalTimeSpan = latestEnd - earliestStart;
@@ -66,38 +70,45 @@ export default function GanttChart({ spans }: { spans: Spans }) {
           -
         </Button>
       </div>
-      <div className="overflow-auto">
-        <div
-          className="flex"
-          style={{
-            width: `${chartWidth}px`,
-          }}
-        >
-          <div className="flex flex-col">
-            {Object.entries(spans).map(([name]) => (
-              <div key={name} className="text-md font-semibold w-36 h-12 mb-6">
-                {name}
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col">
-            {Object.entries(spans).map(([name, spans]) => (
-              <SpanTrack
-                key={name}
-                name={name}
-                spans={spans}
+      {allSpans.length === 0 ? (
+        <div>No spans to display</div>
+      ) : (
+        <div className="overflow-auto">
+          <div
+            className="flex"
+            style={{
+              width: `${chartWidth}px`,
+            }}
+          >
+            <div className="flex flex-col">
+              {Object.entries(spans).map(([name]) => (
+                <div
+                  key={name}
+                  className="text-md font-semibold w-36 h-12 mb-6"
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col">
+              {Object.entries(spans).map(([name, spans]) => (
+                <SpanTrack
+                  key={name}
+                  name={name}
+                  spans={spans}
+                  earliestStart={earliestStart}
+                  pxPerMs={pxPerMs}
+                />
+              ))}
+              <Timeline
                 earliestStart={earliestStart}
-                pxPerMs={pxPerMs}
+                latestEnd={latestEnd}
+                chartWidth={chartWidth}
               />
-            ))}
-            <Timeline
-              earliestStart={earliestStart}
-              latestEnd={latestEnd}
-              chartWidth={chartWidth}
-            />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -115,9 +126,9 @@ function SpanTrack({
 }) {
   return (
     <div key={name} className="relative h-12 mb-6">
-      {spans.map((span, spanIndex) => (
+      {spans.map((span) => (
         <SpanBox
-          key={`${name}-${spanIndex}}`}
+          key={`${name}-${span.start}}`}
           color={spanColors[name] ?? "bg-gray-500"}
           span={span}
           earliestStart={earliestStart}
@@ -176,10 +187,11 @@ function Timeline({
   chartWidth: number;
 }) {
   const totalDuration = latestEnd - earliestStart;
-  const tickFrequency = 1000 * 10; // 1 second * numberOfSeconds untill next tick
+  const tickFrequency = 1000 * 10; // 1 second (in ms) * numberOfSeconds untill next tick
   const numOfIntervals = totalDuration / tickFrequency;
   const intervalWidth = chartWidth / numOfIntervals;
-
+  console.log(latestEnd, earliestStart);
+  console.log(totalDuration);
   return (
     <div className="flex h-6" style={{ width: `${chartWidth}px` }}>
       {[...Array(Math.ceil(numOfIntervals) + 1)].map((_, index) => (

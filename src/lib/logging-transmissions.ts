@@ -2,7 +2,7 @@ import { differenceInSeconds } from "date-fns";
 import { TRANSMIT_INITIATED_MSG } from "./events";
 import { LogEntry, TimeSeriesPoint } from "./logging-utils";
 
-type TransmissionRecord = Record<string, TimeSeriesPoint[]>;
+export type TransmissionRecord = Record<string, TimeSeriesPoint[]>;
 
 export const countTransmissionsPerSecond = (
   logEntries: LogEntry[]

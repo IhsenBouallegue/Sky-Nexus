@@ -1851,6 +1851,7 @@ dependencies = [
 [[package]]
 name = "mavlink-network-node"
 version = "0.1.0"
+source = "git+https://github.com/IhsenBouallegue/mavlink-network-node.git#e9094001d5464e927a5eb4716687dcfb4dd6c963"
 dependencies = [
  "async-trait",
  "chrono",

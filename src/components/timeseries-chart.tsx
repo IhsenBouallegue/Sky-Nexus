@@ -1,4 +1,4 @@
-import { TimeSeriesPoint } from "@/lib/logging-utils";
+import { TimeSeriesPoint } from "@/lib/analyzers/channel-activity-analyzer";
 import { format, parseISO } from "date-fns";
 import React from "react";
 import {

@@ -1,4 +1,6 @@
-import { differenceInSeconds, format, parseISO } from "date-fns";
+import { differenceInSeconds } from "date-fns";
+import { ChannelActivityRecord } from "./analyzers/channel-activity-analyzer";
+import { EventCountRecord } from "./analyzers/event-count-analyzer";
 import { SEND_TO_MAIN_MSG, SEND_TO_NETWORK_MSG } from "./events";
 export interface LogEntry {
   timestamp: string;
@@ -21,22 +23,10 @@ export interface LogEntry {
   spans: any[];
 }
 
-export interface TimeSeriesPoint {
-  x: Date;
-  y: number;
-}
-
 export interface ChartPoint {
   x: string;
   y: number;
 }
-
-type ChannelActivity = {
-  sentMessages: TimeSeriesPoint[];
-  receivedMessages: TimeSeriesPoint[];
-};
-
-export type ChannelActivityRecord = Record<string, ChannelActivity>;
 
 export const analyzeChannelActivity = (
   logEntries: LogEntry[]
@@ -50,6 +40,9 @@ export const analyzeChannelActivity = (
 
   // Initialize channel activity records
   for (const entry of logEntries) {
+    if (!entry.fields.driver) {
+      continue;
+    }
     const driver = entry.fields.driver;
     if (!channelActivity[driver]) {
       channelActivity[driver] = { sentMessages: [], receivedMessages: [] };
@@ -82,45 +75,16 @@ export const analyzeChannelActivity = (
   return channelActivity;
 };
 
-export const processDataForBarChart = (
-  logData: LogEntry[],
-  driverName: string
-): ChartPoint[] => {
-  let cumulativeCount = 0;
-  const dataBySecond: { [key: string]: number } = {};
-
-  // biome-ignore lint/complexity/noForEach: <explanation>
-  logData.forEach((entry) => {
-    if (entry.fields.driver === driverName) {
-      const secondKey = format(
-        parseISO(entry.timestamp),
-        "yyyy-MM-dd HH:mm:ss"
-      );
-
-      if (entry.fields.message.includes("Transmit")) {
-        cumulativeCount = 0;
-      } else if (entry.fields.message.includes("Received")) {
-        cumulativeCount++;
-      }
-
-      dataBySecond[secondKey] = cumulativeCount;
-    }
-  });
-
-  return Object.entries(dataBySecond).map(([key, value]) => ({
-    x: format(parseISO(key), "HH:mm:ss"),
-    y: value,
-  }));
-};
-
 type EventCountDictionary = Record<string, number>;
-export type EventCountRecord = Record<string, ChartPoint[]>;
 
 export function countLogEvents(logEntries: LogEntry[]): EventCountRecord {
   const driverEventCounts: Record<string, EventCountDictionary> = {};
 
   for (const entry of logEntries) {
-    const driver = entry.fields.driver || "global";
+    if (!entry.fields.driver) {
+      continue;
+    }
+    const driver = entry.fields.driver;
     const eventMessage = entry.fields.message;
 
     if (!driverEventCounts[driver]) {

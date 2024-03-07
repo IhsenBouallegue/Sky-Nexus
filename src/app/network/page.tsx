@@ -7,18 +7,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { listen } from "@tauri-apps/api/event";
-import { useEffect } from "react";
 
 export default function Page() {
-  useEffect(() => {
-    console.log("Listening for messages from UAV...");
-
-    listen("uav_message", (event) => {
-      console.log("Received message from UAV:", event.payload);
-    });
-  }, []);
-
   return (
     <div className="flex flex-col p-6 w-full">
       <Title>Network</Title>

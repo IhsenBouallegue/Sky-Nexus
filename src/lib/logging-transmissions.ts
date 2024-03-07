@@ -1,6 +1,7 @@
 import { differenceInSeconds } from "date-fns";
+import { TimeSeriesPoint } from "./analyzers/channel-activity-analyzer";
 import { TRANSMIT_INITIATED_MSG } from "./events";
-import { LogEntry, TimeSeriesPoint } from "./logging-utils";
+import { LogEntry } from "./logging-utils";
 
 export type TransmissionRecord = Record<string, TimeSeriesPoint[]>;
 

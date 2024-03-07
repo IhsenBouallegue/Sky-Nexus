@@ -3,7 +3,6 @@ import React from "react";
 import {
   Bar,
   BarChart,
-  Brush,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -28,13 +27,6 @@ export default function AnalysisBarChart({
           <XAxis dataKey="x" />
           <YAxis />
           <Tooltip content={<CustomTooltip />} />
-          <Brush
-            dataKey="x"
-            startIndex={0}
-            height={30}
-            fill="transparent"
-            stroke="hsl(var(--foreground) / 40%)"
-          />
           <Bar dataKey="y" fill="#8884d8" />
         </BarChart>
       </ResponsiveContainer>

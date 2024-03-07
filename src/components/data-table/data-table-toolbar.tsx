@@ -35,7 +35,22 @@ export const levels = [
 
 export const drivers = [
   {
-    label: "LoRa",
+    label: "LoRa sx1276 spi",
+    value: "lora_sx1276_spi_driver",
+    icon: AntennaIcon,
+  },
+  {
+    label: "LoRa sx1262 spi",
+    value: "lora_sx1262_spi_driver",
+    icon: AntennaIcon,
+  },
+  {
+    label: "LoRa sx1262 uart",
+    value: "lora_sx1262_uart_driver",
+    icon: AntennaIcon,
+  },
+  {
+    label: "LoRa sx1276 spi (old)",
     value: "lora_driver",
     icon: AntennaIcon,
   },

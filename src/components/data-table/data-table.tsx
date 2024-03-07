@@ -53,6 +53,7 @@ export function LogEntriesDataTable<TData, TValue>({
       rowSelection,
       columnFilters,
     },
+    autoResetPageIndex: false,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -65,7 +66,6 @@ export function LogEntriesDataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
-
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} />

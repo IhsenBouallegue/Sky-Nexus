@@ -1,115 +1,57 @@
-import { Spans, extractSpans } from "@/components/gantt-chart";
+import { Event, listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import {
-  TransmissionRecord,
-  countTransmissionsPerSecond,
-} from "./logging-transmissions";
-import {
-  ChannelActivityRecord,
-  EventCountRecord,
-  LogEntry,
-  MessageTypeCountRecord,
-  analyzeChannelActivity,
-  countLogEvents,
-  countMessageTypes,
-} from "./logging-utils";
+  AnalysisStateResults,
+  UnifiedLogEntryAnalyzer,
+} from "./analyzers/unified-analyzer";
+import { LogEntry } from "./logging-utils";
 
 interface AnalysisState {
-  logData: Record<string, LogEntry[]>;
-  channelActivity: Record<string, ChannelActivityRecord>;
-  transmissionCounts: Record<string, TransmissionRecord>;
-  eventCounts: Record<string, EventCountRecord>;
-  messageTypeCounts: Record<string, MessageTypeCountRecord>;
-  spans: Record<string, Spans>;
-  setLogData: (logData: Record<string, LogEntry[]>) => void;
-  addLogEntries: (logs: string, entries: LogEntry[]) => void;
-  addLogEntry: (logs: string, entry: LogEntry) => void;
-  removeLogEntries: (logs: string) => void;
-  analyzeChannelActivity: (logDataKey: string) => void;
-  countTransmissionsPerSecond: (logDataKey: string) => void;
-  countLogEvents: (logDataKey: string) => void;
-  countMessageTypes: (logDataKey: string, messageType: string) => void;
-  extractSpans: (logDataKey: string) => void;
+  analyzers: Record<string, UnifiedLogEntryAnalyzer>;
+  results: Record<string, Partial<AnalysisStateResults>>;
+  // Methods to manage data sources and their analyses
+  addDataSource: (sourceId: string) => void;
+  removeDataSource: (sourceId: string) => void;
+  updateLogEntry: (sourceId: string, entry: LogEntry) => void;
 }
 
 export const useAnalysisStore = create<AnalysisState>()(
   immer((set, get) => ({
-    spans: {},
-    eventCounts: {},
-    messageTypeCounts: {},
-    channelActivity: {},
-    transmissionCounts: {},
-    logData: {},
-    setLogData: (logData) => set({ logData }),
-    addLogEntries: (logs: string, entries: LogEntry[]) => {
+    analyzers: {},
+    results: {},
+
+    addDataSource: (sourceId: string) => {
       set((state) => {
-        state.logData[logs] = entries;
-      });
-      get().analyzeChannelActivity(logs);
-      get().countTransmissionsPerSecond(logs);
-      get().countLogEvents(logs);
-      get().extractSpans(logs);
-    },
-    removeLogEntries: (logs: string) => {
-      set((state) => {
-        delete state.logData[logs];
-        delete state.channelActivity[logs];
-        delete state.transmissionCounts[logs];
-        delete state.eventCounts[logs];
-        delete state.spans[logs];
+        state.analyzers[sourceId] = new UnifiedLogEntryAnalyzer();
       });
     },
-    addLogEntry: (logs: string, entry: LogEntry) => {
+
+    removeDataSource: (sourceId: string) => {
       set((state) => {
-        if (!state.logData[logs]) {
-          state.logData[logs] = [];
-        }
-        state.logData[logs].push(entry);
-      });
-      get().analyzeChannelActivity(logs);
-      get().countTransmissionsPerSecond(logs);
-      get().countLogEvents(logs);
-      get().extractSpans(logs);
-    },
-    analyzeChannelActivity: (logDataKey) => {
-      set((state) => {
-        if (!state.logData[logDataKey]) return;
-        state.channelActivity[logDataKey] = analyzeChannelActivity(
-          state.logData[logDataKey]
-        );
+        delete state.analyzers[sourceId];
+        delete state.results[sourceId];
       });
     },
-    countTransmissionsPerSecond: (logDataKey) => {
-      set((state) => {
-        if (!state.logData[logDataKey]) return;
-        state.transmissionCounts[logDataKey] = countTransmissionsPerSecond(
-          state.logData[logDataKey]
-        );
-      });
-    },
-    countLogEvents: (logDataKey) => {
-      set((state) => {
-        if (!state.logData[logDataKey]) return;
-        state.eventCounts[logDataKey] = countLogEvents(
-          state.logData[logDataKey]
-        );
-      });
-    },
-    countMessageTypes: (logDataKey, messageType) => {
-      set((state) => {
-        if (!state.logData[logDataKey]) return;
-        state.messageTypeCounts[logDataKey] = countMessageTypes(
-          state.logData[logDataKey],
-          messageType
-        );
-      });
-    },
-    extractSpans: (logDataKey) => {
-      set((state) => {
-        if (!state.logData[logDataKey]) return;
-        state.spans[logDataKey] = extractSpans(state.logData[logDataKey]);
-      });
+
+    updateLogEntry: (sourceId: string, entry: LogEntry) => {
+      const analyzer = get().analyzers[sourceId];
+      if (analyzer) {
+        analyzer.updateLogEntry(entry);
+        set((state) => {
+          state.results[sourceId] = analyzer.aggregateResults();
+        });
+      }
     },
   }))
 );
+
+listen("message", (event: Event<[string, string]>) => {
+  const [logEntryJson, sourceId] = event.payload;
+  const logEntry: LogEntry = JSON.parse(logEntryJson);
+  const store = useAnalysisStore.getState();
+  if (!store.analyzers[sourceId]) {
+    store.addDataSource(sourceId);
+  }
+  store.updateLogEntry(sourceId, logEntry);
+});

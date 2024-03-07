@@ -1,3 +1,4 @@
+import { SpanDuration, Spans } from "@/lib/analyzers/span-analyzer";
 import { parseDuration } from "@/lib/logging-event-utils";
 import { LogEntry } from "@/lib/logging-utils";
 import { cn } from "@/lib/utils";
@@ -14,20 +15,12 @@ const spanColors: SpanColorLookup = {
   "Prepare For TX": "bg-orange-500",
 };
 
-type SpanDuration = {
-  start: number;
-  end: number;
-};
-export type Spans = Record<string, SpanDuration[]>;
-
 export function extractSpans(logEntries: LogEntry[]): Spans {
   const spans: Spans = {};
 
   for (const entry of logEntries) {
     // Skip entries that are not spans
     if (!entry.span || !entry.fields["time.busy"]) {
-      console.log("Skipping entry", entry);
-
       continue;
     }
     const { name } = entry.span;
@@ -190,8 +183,6 @@ function Timeline({
   const tickFrequency = 1000 * 10; // 1 second (in ms) * numberOfSeconds untill next tick
   const numOfIntervals = totalDuration / tickFrequency;
   const intervalWidth = chartWidth / numOfIntervals;
-  console.log(latestEnd, earliestStart);
-  console.log(totalDuration);
   return (
     <div className="flex h-6" style={{ width: `${chartWidth}px` }}>
       {[...Array(Math.ceil(numOfIntervals) + 1)].map((_, index) => (

@@ -4,13 +4,14 @@ import { ChangeEvent, useRef } from "react";
 import { Button } from "./ui/button";
 
 export default function FileUploader() {
-  const addDataSource = useAnalysisStore((state) => state.addDataSource);
-  const updateLogEntry = useAnalysisStore((state) => state.updateLogEntry);
+  const addNode = useAnalysisStore((state) => state.addNode);
+  const addLogEntry = useAnalysisStore((state) => state.addLogEntry);
   const fileInputRef = useRef<HTMLInputElement>(null); // Create a ref for the file input
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const nodeName = file.name.split("_")[0];
       const reader = new FileReader();
       reader.onload = (e: ProgressEvent<FileReader>) => {
         const text = e.target?.result;
@@ -19,8 +20,8 @@ export default function FileUploader() {
           const jsonArrayString = `[${text.replace(/}\s*{/g, "},{")}]`;
           try {
             const logEntries = JSON.parse(jsonArrayString);
-            addDataSource(file.name);
-            for (const entry of logEntries) updateLogEntry(file.name, entry);
+            addNode(file.name, nodeName);
+            for (const entry of logEntries) addLogEntry(file.name, entry);
           } catch (error) {
             console.error("Error parsing JSON:", error);
           }
@@ -42,16 +43,10 @@ export default function FileUploader() {
         onChange={handleFileChange}
         className="hidden" // Keep the input hidden
       />
-      <Button
-        className="border-dashed w-64"
-        variant="outline"
-        onClick={handleButtonClick}
-      >
+      <Button className="border-dashed w-64" variant="outline" onClick={handleButtonClick}>
         <span className="flex items-center justify-center space-x-2 p-4">
           <UploadIcon className="h-6 w-6" />
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Upload Logs
-          </span>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Upload Logs</span>
         </span>
       </Button>
     </>

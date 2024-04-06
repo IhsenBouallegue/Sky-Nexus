@@ -1,15 +1,19 @@
+import { Driver, ILogEntryAnalyzer } from "@/lib/analyzers/analyzer";
+import { ChartPoint, LogEntry } from "@/lib/logging-utils";
+import { NodeId } from "@/lib/store";
 import { produce } from "immer";
-import { ChartPoint, LogEntry } from "../logging-utils";
-import { Driver, ILogEntryAnalyzer } from "./analyzer";
 
-export type EventCountRecord = Record<Driver, ChartPoint[]>;
+export type EventCountResults = Record<NodeId, Record<Driver, ChartPoint[]>>;
 
-export class EventCountAnalyzer implements ILogEntryAnalyzer<EventCountRecord> {
-  private eventCounts: EventCountRecord = {};
+export class EventCountAnalyzer implements ILogEntryAnalyzer<EventCountResults> {
+  private eventCounts: EventCountResults = {};
 
-  update(entry: LogEntry) {
-    // Wrap the update logic with produce for an immutable update
-    this.eventCounts = produce(this.eventCounts, (draft) => {
+  update(nodeId: string, entry: LogEntry): void {
+    if (!this.eventCounts[nodeId]) {
+      this.eventCounts[nodeId] = {};
+    }
+
+    this.eventCounts[nodeId] = produce(this.eventCounts[nodeId], (draft) => {
       const driver = entry.fields.driver;
       const eventMessage = entry.fields.message;
 
@@ -18,12 +22,10 @@ export class EventCountAnalyzer implements ILogEntryAnalyzer<EventCountRecord> {
       }
 
       // Ensure the array for this driver exists
-      draft[driver] = draft[driver] || [];
+      if (!draft[driver]) draft[driver] = [];
 
       // Attempt to find an existing chart point for this message
-      const chartPoint = draft[driver].find(
-        (point) => point.x === eventMessage
-      );
+      const chartPoint = draft[driver].find((point) => point.x === eventMessage);
 
       if (chartPoint) {
         // Increment count if the chart point exists
@@ -33,9 +35,11 @@ export class EventCountAnalyzer implements ILogEntryAnalyzer<EventCountRecord> {
         draft[driver].push({ x: eventMessage, y: 1 });
       }
     });
+
+    this.eventCounts = { ...this.eventCounts, [nodeId]: this.eventCounts[nodeId] };
   }
 
-  getResults(): EventCountRecord {
+  getResults(): EventCountResults {
     return this.eventCounts;
   }
 }

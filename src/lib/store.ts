@@ -1,57 +1,68 @@
-import { Event, listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import {
-  AnalysisStateResults,
-  UnifiedLogEntryAnalyzer,
-} from "./analyzers/unified-analyzer";
+import { UnifiedAnalyzer } from "./analyzers/unified-analyzer";
 import { LogEntry } from "./logging-utils";
 
+export type NodeId = string;
+type SystemId = string;
+interface Node {
+  id: NodeId;
+  logEntries: LogEntry[];
+  name: string;
+}
+
+interface System {
+  id: SystemId;
+  analyzer: UnifiedAnalyzer;
+  nodes: NodeId[];
+}
+
 interface AnalysisState {
-  analyzers: Record<string, UnifiedLogEntryAnalyzer>;
-  results: Record<string, Partial<AnalysisStateResults>>;
-  // Methods to manage data sources and their analyses
-  addDataSource: (sourceId: string) => void;
-  removeDataSource: (sourceId: string) => void;
-  updateLogEntry: (sourceId: string, entry: LogEntry) => void;
+  system: System;
+  nodes: Record<NodeId, Node>;
+
+  addNode: (nodeId: string, nodeName: string) => void;
+  removeNode: (nodeId: string) => void;
+  addLogEntry: (nodeId: string, entry: LogEntry) => void;
 }
 
 export const useAnalysisStore = create<AnalysisState>()(
-  immer((set, get) => ({
-    analyzers: {},
-    results: {},
+  immer((set) => ({
+    system: {
+      id: "system1",
+      analyzer: new UnifiedAnalyzer(),
+      nodes: [],
+    },
+    nodes: {},
 
-    addDataSource: (sourceId: string) => {
+    addNode: (nodeId, nodeName) => {
       set((state) => {
-        state.analyzers[sourceId] = new UnifiedLogEntryAnalyzer();
+        // Create a new node with empty log entries
+        state.nodes[nodeId] = { id: nodeId, logEntries: [], name: nodeName };
+        // Add the node ID to the system's node list
+        state.system.nodes.push(nodeId);
       });
     },
 
-    removeDataSource: (sourceId: string) => {
+    removeNode: (nodeId) => {
       set((state) => {
-        delete state.analyzers[sourceId];
-        delete state.results[sourceId];
+        // Remove the node from the system's node list
+        state.system.nodes = state.system.nodes.filter((id) => id !== nodeId);
+        // Delete the node from the nodes record
+        delete state.nodes[nodeId];
       });
     },
 
-    updateLogEntry: (sourceId: string, entry: LogEntry) => {
-      const analyzer = get().analyzers[sourceId];
-      if (analyzer) {
-        analyzer.updateLogEntry(entry);
-        set((state) => {
-          state.results[sourceId] = analyzer.aggregateResults();
-        });
-      }
+    addLogEntry: (nodeId, entry) => {
+      set((state) => {
+        // Add the log entry to the specified node
+        const node = state.nodes[nodeId];
+        if (node) {
+          node.logEntries.push(entry);
+          // Recalculate analyzers for the node (assuming an appropriate method on UnifiedAnalyzer)
+          state.system.analyzer.update(nodeId, entry);
+        }
+      });
     },
   }))
 );
-
-listen("message", (event: Event<[string, string]>) => {
-  const [logEntryJson, sourceId] = event.payload;
-  const logEntry: LogEntry = JSON.parse(logEntryJson);
-  const store = useAnalysisStore.getState();
-  if (!store.analyzers[sourceId]) {
-    store.addDataSource(sourceId);
-  }
-  store.updateLogEntry(sourceId, logEntry);
-});

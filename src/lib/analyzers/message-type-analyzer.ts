@@ -1,20 +1,24 @@
+import { Driver, Event, ILogEntryAnalyzer } from "@/lib/analyzers/analyzer";
+import { LogEntry } from "@/lib/logging-utils";
+import { NodeId } from "@/lib/store";
 import { produce } from "immer";
-import { LogEntry } from "../logging-utils";
-import { Driver, Event, ILogEntryAnalyzer } from "./analyzer";
 
-export type MessageTypeCountRecord = Record<
-  Driver,
-  Record<Event, { [msgType: string]: number }>
->;
+type MessageTypeCount = {
+  [msgType: string]: number;
+};
+type EventMessageCount = Record<Event, MessageTypeCount>;
 
-export class MessageTypeAnalyzer
-  implements ILogEntryAnalyzer<MessageTypeCountRecord>
-{
-  private messageTypeCounts: MessageTypeCountRecord = {};
+export type MessageTypeCountResults = Record<NodeId, Record<Driver, EventMessageCount>>;
 
-  update(entry: LogEntry): void {
+export class MessageTypeAnalyzer implements ILogEntryAnalyzer<MessageTypeCountResults> {
+  private messageTypeCounts: MessageTypeCountResults = {};
+
+  update(nodeId: string, entry: LogEntry): void {
+    if (!this.messageTypeCounts[nodeId]) {
+      this.messageTypeCounts[nodeId] = {};
+    }
     // Using Immer's produce to handle the immutable update
-    this.messageTypeCounts = produce(this.messageTypeCounts, (draft) => {
+    this.messageTypeCounts[nodeId] = produce(this.messageTypeCounts[nodeId] || {}, (draft) => {
       const { driver, message, json_packet } = entry.fields;
 
       if (driver && message && json_packet) {
@@ -27,17 +31,17 @@ export class MessageTypeAnalyzer
             draft[driver][message] = draft[driver][message] || {}; // Ensure message object exists
 
             // Increment message type count or initialize it to 1
-            draft[driver][message][msgType] =
-              (draft[driver][message][msgType] || 0) + 1;
+            draft[driver][message][msgType] = (draft[driver][message][msgType] || 0) + 1;
           }
         } catch (error) {
           console.error("Error parsing JSON packet:", error);
         }
       }
     });
+    this.messageTypeCounts = { ...this.messageTypeCounts, [nodeId]: this.messageTypeCounts[nodeId] };
   }
 
-  getResults(): MessageTypeCountRecord {
+  getResults(): MessageTypeCountResults {
     return this.messageTypeCounts;
   }
 }

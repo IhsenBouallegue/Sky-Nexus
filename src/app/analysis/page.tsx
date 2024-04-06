@@ -12,6 +12,7 @@ import EventCount from "./event-count";
 import LogsTable from "./logs-table";
 import MessageTypes from "./message-types";
 import NetworkTimeline from "./network-timeline";
+import RssiChart from "./rssi-chart";
 
 export default function Page() {
   const systemNodes = useAnalysisStore((state) => state.system.nodes);
@@ -38,6 +39,7 @@ export default function Page() {
         {systemNodes.map((nodeId) => (
           <TabsContent key={nodeId} value={nodeId}>
             <div className="flex flex-col gap-12">
+              <RssiChart nodeId={nodeId} />
               <ChannelActivity nodeId={nodeId} />
               <EventCount nodeId={nodeId} />
               {[RECEIVE_PACKET_MSG, SEND_PACKET_MSG].map((event) => (

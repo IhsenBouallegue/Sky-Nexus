@@ -53,10 +53,7 @@ export default function GanttChart({ spans }: { spans: Spans }) {
   return (
     <div>
       <div className="flex gap-2 w-full mb-4">
-        <Button
-          className="ml-auto"
-          onClick={() => setPxPerMs((prev) => prev * 2)}
-        >
+        <Button className="ml-auto" onClick={() => setPxPerMs((prev) => prev * 2)}>
           +
         </Button>
         <Button className="mr-8" onClick={() => setPxPerMs((prev) => prev / 2)}>
@@ -75,29 +72,16 @@ export default function GanttChart({ spans }: { spans: Spans }) {
           >
             <div className="flex flex-col">
               {Object.entries(spans).map(([name]) => (
-                <div
-                  key={name}
-                  className="text-md font-semibold w-36 h-12 mb-6"
-                >
+                <div key={name} className="text-md font-semibold w-36 h-12 mb-6">
                   {name}
                 </div>
               ))}
             </div>
             <div className="flex flex-col">
               {Object.entries(spans).map(([name, spans]) => (
-                <SpanTrack
-                  key={name}
-                  name={name}
-                  spans={spans}
-                  earliestStart={earliestStart}
-                  pxPerMs={pxPerMs}
-                />
+                <SpanTrack key={name} name={name} spans={spans} earliestStart={earliestStart} pxPerMs={pxPerMs} />
               ))}
-              <Timeline
-                earliestStart={earliestStart}
-                latestEnd={latestEnd}
-                chartWidth={chartWidth}
-              />
+              <Timeline earliestStart={earliestStart} latestEnd={latestEnd} chartWidth={chartWidth} />
             </div>
           </div>
         </div>

@@ -23,15 +23,6 @@ export class NodeRssiAnalyzer implements ILogEntryAnalyzer<NodeRssiResults> {
       this.nodeRssiResults[nodeId] = { rssiTimeSeries: [], averageRssi: null };
     }
 
-    // Process the log entry for the given node
-    this.updateRssiForNode(nodeId, entry);
-  }
-
-  getResults(): NodeRssiResults {
-    return this.nodeRssiResults;
-  }
-
-  private updateRssiForNode(nodeId: string, entry: LogEntry): void {
     // Ensure the entry has an RSSI value before proceeding
     if (typeof entry.fields.rssi === "number") {
       const timestamp = new Date(entry.timestamp);
@@ -45,5 +36,9 @@ export class NodeRssiAnalyzer implements ILogEntryAnalyzer<NodeRssiResults> {
       const numEntries = this.nodeRssiResults[nodeId].rssiTimeSeries.length;
       this.nodeRssiResults[nodeId].averageRssi = totalRssi / numEntries;
     }
+  }
+
+  getResults(): NodeRssiResults {
+    return this.nodeRssiResults;
   }
 }

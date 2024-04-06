@@ -8,6 +8,7 @@ export type SpanDuration = {
   start: number;
   end: number;
 };
+export type Spans = Record<string, SpanDuration[]>;
 export type SpansResults = Record<NodeId, Record<string, SpanDuration[]>>;
 
 export class SpanDurationAnalyzer implements ILogEntryAnalyzer<SpansResults> {

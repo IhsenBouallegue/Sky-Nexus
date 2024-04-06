@@ -29,7 +29,6 @@ export class SpanDurationAnalyzer implements ILogEntryAnalyzer<SpansResults> {
       const timestamp = new Date(entry.timestamp).getTime();
       const end = timestamp;
       const start = end - busyDuration;
-      console.log("Span duration", name, { start, end });
 
       if (!draft[name]) {
         draft[name] = [];

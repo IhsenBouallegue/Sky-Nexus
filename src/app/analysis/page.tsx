@@ -19,7 +19,7 @@ export default function Page() {
   const removeNode = useAnalysisStore((state) => state.removeNode);
   return (
     <div className="flex flex-col p-6 w-full">
-      <Title>Log Event Analysis</Title>
+      <Title>Node Status Analysis</Title>
       <Tabs defaultValue="account">
         <div className="flex justify-between w-full gap-4">
           <TabsList className="w-full justify-start">

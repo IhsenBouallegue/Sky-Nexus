@@ -1,13 +1,8 @@
 import { SEND_TO_MAIN_MSG, SEND_TO_NETWORK_MSG } from "@/lib/events";
-import { LogEntry } from "@/lib/logging-utils";
+import { LogEntry, TimeSeriesPoint } from "@/lib/logging-utils";
 import { NodeId } from "@/lib/store";
 import { produce } from "immer";
 import { Driver, ILogEntryAnalyzer } from "./analyzer";
-
-export interface TimeSeriesPoint {
-  x: Date;
-  y: number;
-}
 
 type ChannelActivity = {
   sentMessages: TimeSeriesPoint[];

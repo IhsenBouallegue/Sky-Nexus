@@ -22,7 +22,7 @@ export default function Home() {
         <div className="flex flex-col ">
           <h2 className="text-xl font-semibold ">System ID: {system.id}</h2>
           <h3 className="text-md text-muted">
-            Package Delivery Rate:{" "}
+            Packet Delivery Rate:{" "}
             {system.analyzer.getAnalyzerResult(AnalyzerKeys.PacketDeliveryRatio)?.ratio.toPrecision(2) || 0}
           </h3>
         </div>
@@ -45,10 +45,17 @@ export default function Home() {
               <CardContent>
                 {system.analyzer.getAnalyzerResult(AnalyzerKeys.NodeRssi) && (
                   <p>
-                    Rssi:{" "}
+                    RSSI:{" "}
                     {system.analyzer.getAnalyzerResult(AnalyzerKeys.NodeRssi)![nodeId].averageRssi?.toPrecision(2) ||
                       "0"}{" "}
                     dbm
+                  </p>
+                )}
+                {system.analyzer.getAnalyzerResult(AnalyzerKeys.NodeSnr) && (
+                  <p>
+                    SNR:{" "}
+                    {system.analyzer.getAnalyzerResult(AnalyzerKeys.NodeSnr)![nodeId].averageSnr?.toPrecision(2) ||
+                      "0"}{" "}
                   </p>
                 )}
               </CardContent>

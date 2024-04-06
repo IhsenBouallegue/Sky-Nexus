@@ -4,6 +4,7 @@ import { ChannelActivityAnalyzer, ChannelActivityResults } from "./channel-activ
 import { EventCountAnalyzer, EventCountResults } from "./event-count-analyzer";
 import { MessageTypeAnalyzer, MessageTypeCountResults } from "./message-type-analyzer";
 import { NodeRssiAnalyzer, NodeRssiResults } from "./node-rssi-analyzer";
+import { NodeSnrAnalyzer, NodeSnrResults } from "./node-snr-analyzer";
 import { PDRResults, PacketDeliveryRatioAnalyzer } from "./packet-delivery-ratio-analyzer";
 import { SpanDurationAnalyzer, SpansResults } from "./span-analyzer";
 
@@ -14,6 +15,7 @@ export enum AnalyzerKeys {
   Span = "span",
   EventCount = "eventCount",
   MessageType = "messageType",
+  NodeSnr = "nodeSnr",
   // Add more keys as necessary
 }
 
@@ -24,6 +26,7 @@ type AnalysisResults = {
   [AnalyzerKeys.Span]?: SpansResults;
   [AnalyzerKeys.EventCount]?: EventCountResults;
   [AnalyzerKeys.MessageType]?: MessageTypeCountResults;
+  [AnalyzerKeys.NodeSnr]?: NodeSnrResults;
   // Define additional analysis result types as necessary.
 };
 
@@ -38,6 +41,7 @@ export class UnifiedAnalyzer {
     this.registerAnalyzer(AnalyzerKeys.Span, new SpanDurationAnalyzer());
     this.registerAnalyzer(AnalyzerKeys.EventCount, new EventCountAnalyzer());
     this.registerAnalyzer(AnalyzerKeys.MessageType, new MessageTypeAnalyzer());
+    this.registerAnalyzer(AnalyzerKeys.NodeSnr, new NodeSnrAnalyzer());
   }
 
   registerAnalyzer<T>(key: AnalyzerKeys, analyzer: ILogEntryAnalyzer<T>): void {

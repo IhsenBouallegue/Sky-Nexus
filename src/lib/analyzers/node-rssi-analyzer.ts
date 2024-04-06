@@ -1,11 +1,6 @@
 import { ILogEntryAnalyzer } from "@/lib/analyzers/analyzer";
-import { LogEntry } from "@/lib/logging-utils";
+import { LogEntry, TimeSeriesPoint } from "@/lib/logging-utils";
 import { NodeId } from "@/lib/store";
-
-interface TimeSeriesPoint {
-  x: Date;
-  y: number;
-}
 
 interface RssiResults {
   rssiTimeSeries: TimeSeriesPoint[];

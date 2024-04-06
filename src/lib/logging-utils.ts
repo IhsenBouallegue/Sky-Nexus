@@ -7,6 +7,7 @@ export interface LogEntry {
     driver: string;
     json_packet?: string;
     rssi?: number;
+    snr?: number;
     "time.busy": string;
     "time.idle": string;
   };
@@ -21,5 +22,10 @@ export interface LogEntry {
 
 export interface ChartPoint {
   x: string;
+  y: number;
+}
+
+export interface TimeSeriesPoint {
+  x: Date;
   y: number;
 }

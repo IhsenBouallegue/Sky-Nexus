@@ -1,13 +1,10 @@
 import { differenceInSeconds } from "date-fns";
-import { TimeSeriesPoint } from "./analyzers/channel-activity-analyzer";
 import { TRANSMIT_INITIATED_MSG } from "./events";
-import { LogEntry } from "./logging-utils";
+import { LogEntry, TimeSeriesPoint } from "./logging-utils";
 
 export type TransmissionRecord = Record<string, TimeSeriesPoint[]>;
 
-export const countTransmissionsPerSecond = (
-  logEntries: LogEntry[]
-): TransmissionRecord => {
+export const countTransmissionsPerSecond = (logEntries: LogEntry[]): TransmissionRecord => {
   const transmissionCounts: TransmissionRecord = {};
   if (logEntries.length === 0) return transmissionCounts;
   // Assuming logEntries are sorted by timestamp
@@ -19,11 +16,7 @@ export const countTransmissionsPerSecond = (
     const driver = entry.fields.driver;
     if (!transmissionCounts[driver]) {
       transmissionCounts[driver] = [];
-      for (
-        let time = new Date(startTime);
-        time <= endTime;
-        time.setSeconds(time.getSeconds() + 1)
-      ) {
+      for (let time = new Date(startTime); time <= endTime; time.setSeconds(time.getSeconds() + 1)) {
         transmissionCounts[driver].push({ x: new Date(time), y: 0 });
       }
     }
@@ -33,10 +26,7 @@ export const countTransmissionsPerSecond = (
   for (const entry of logEntries) {
     if (entry.fields.message === TRANSMIT_INITIATED_MSG) {
       const driver = entry.fields.driver;
-      const timeIndex = differenceInSeconds(
-        new Date(entry.timestamp),
-        startTime
-      );
+      const timeIndex = differenceInSeconds(new Date(entry.timestamp), startTime);
 
       transmissionCounts[driver][timeIndex].y++;
     }

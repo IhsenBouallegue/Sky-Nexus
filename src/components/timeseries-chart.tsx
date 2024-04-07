@@ -1,17 +1,7 @@
-import { TimeSeriesPoint } from "@/lib/analyzers/channel-activity-analyzer";
+import { TimeSeriesPoint } from "@/lib/logging-utils";
 import { format, parseISO } from "date-fns";
 import React from "react";
-import {
-  Brush,
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Brush, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import CustomTooltip from "./custom-tooltip";
 
 interface ChartLine {
@@ -19,13 +9,7 @@ interface ChartLine {
   color: string; // Line color
   name: string; // Legend name
   dataPoints: TimeSeriesPoint[]; // Data points
-  type?:
-    | "monotone"
-    | "natural"
-    | "linear"
-    | "step"
-    | "stepAfter"
-    | "stepBefore";
+  type?: "monotone" | "natural" | "linear" | "step" | "stepAfter" | "stepBefore";
   dashed?: boolean;
 }
 
@@ -45,10 +29,7 @@ export default function TimeSeriesChart({
   for (const line of chartLines) {
     if (line.dataPoints && line.dataPoints.length !== 0) {
       for (const point of line.dataPoints) {
-        const formattedDate = format(
-          parseISO(point.x.toISOString()),
-          "HH:mm:ss"
-        );
+        const formattedDate = format(parseISO(point.x.toISOString()), "HH:mm:ss");
         if (!combinedData[formattedDate]) {
           combinedData[formattedDate] = { date: formattedDate };
           // Initialize all line dataKeys to null
@@ -75,13 +56,7 @@ export default function TimeSeriesChart({
           <Legend />
           <Tooltip content={<CustomTooltip />} />
 
-          <Brush
-            dataKey="date"
-            startIndex={0}
-            height={30}
-            fill="transparent"
-            stroke="hsl(var(--foreground) / 40%)"
-          />
+          <Brush dataKey="date" startIndex={0} height={30} fill="transparent" stroke="hsl(var(--foreground) / 40%)" />
           {chartLines.map((line) => (
             <Line
               key={line.name}
